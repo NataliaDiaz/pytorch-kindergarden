@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# coding: utf-8
 """
 PyTorch playground with Siamese networks
 Extending 
@@ -10,11 +12,11 @@ Other approaches:
 """
 
 # Targetting both Python 2 and 3:  The 2nd import tells you that 3/2 = 1.5 (and not 1 as in python2), this is the only statement to use until you are using specific datastructure
-from __future__ import print_function, division, absolute_import
+from __future__ import print_function, division#, absolute_import
+# https://pyformat.info/
 
 
-
-%matplotlib inline
+#%matplotlib inline
 import torchvision
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
@@ -30,9 +32,7 @@ import PIL.ImageOps
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-Helper functions
-Set of helper functions
-In [93]:
+
 def imshow(img,text,should_save=False):
     npimg = img.numpy()
     plt.axis("off")
@@ -45,19 +45,21 @@ def imshow(img,text,should_save=False):
 def show_plot(iteration,loss):
     plt.plot(iteration,loss)
     plt.show()
-Configuration Class
-A simple class to manage configuration
-In [15]:
+
+#Configuration Class
+#A simple class to manage configuration
+
 class Config():
     training_dir = "./data/faces/training/"
     testing_dir = "./data/faces/testing/"
     train_batch_size = 64
     train_number_epochs = 100
-Custom Dataset Class
-This dataset generates a pair of images. 0 for geniune pair and 1 for imposter pair
-In [4]:
+
+
 class SiameseNetworkDataset(Dataset):
-    
+    """
+    This dataset generates a pair of images. 0 for geniune pair and 1 for imposter pair
+	"""
     def __init__(self,imageFolderDataset,transform=None,should_invert=True):
         self.imageFolderDataset = imageFolderDataset    
         self.transform = transform
@@ -93,18 +95,18 @@ class SiameseNetworkDataset(Dataset):
     
     def __len__(self):
         return len(self.imageFolderDataset.imgs)
-Using Image Folder Dataset
-In [5]:
+
+
 folder_dataset = dset.ImageFolder(root=Config.training_dir)
-In [6]:
+
 siamese_dataset = SiameseNetworkDataset(imageFolderDataset=folder_dataset,
                                         transform=transforms.Compose([transforms.Scale((100,100)),
                                                                       transforms.ToTensor()
                                                                       ])
                                        ,should_invert=False)
-Visualising some of the data
-The top row and the bottom row of any column is one pair. The 0s and 1s correspond to the column of the image. 0 indiciates dissimilar, and 1 indicates similar.
-In [7]:
+#Visualising some of the data
+# The top row and the bottom row of any column is one pair. The 0s and 1s correspond to the column of the image. 0 indiciates dissimilar, and 1 indicates similar.
+
 vis_dataloader = DataLoader(siamese_dataset,
                         shuffle=True,
                         num_workers=8,
@@ -117,17 +119,9 @@ concatenated = torch.cat((example_batch[0],example_batch[1]),0)
 imshow(torchvision.utils.make_grid(concatenated))
 print(example_batch[2].numpy())
 
-[[ 0.]
- [ 0.]
- [ 0.]
- [ 0.]
- [ 1.]
- [ 1.]
- [ 1.]
- [ 1.]]
-Neural Net Definition
-We will use a standard convolutional neural network
-In [8]:
+
+
+# standard convolutional neural network
 class SiameseNetwork(nn.Module):
     def __init__(self):
         super(SiameseNetwork, self).__init__()
@@ -170,8 +164,7 @@ class SiameseNetwork(nn.Module):
         output1 = self.forward_once(input1)
         output2 = self.forward_once(input2)
         return output1, output2
-Contrastive Loss
-In [9]:
+
 class ContrastiveLoss(torch.nn.Module):
     """
     Contrastive loss function.
@@ -189,21 +182,21 @@ class ContrastiveLoss(torch.nn.Module):
 
 
         return loss_contrastive
-Training Time!
-In [10]:
+
+
 train_dataloader = DataLoader(siamese_dataset,
                         shuffle=True,
                         num_workers=8,
                         batch_size=Config.train_batch_size)
-In [11]:
+
 net = SiameseNetwork().cuda()
 criterion = ContrastiveLoss()
 optimizer = optim.Adam(net.parameters(),lr = 0.0005 )
-In [12]:
+
 counter = []
 loss_history = [] 
 iteration_number= 0
-In [63]:
+
 for epoch in range(0,Config.train_number_epochs):
     for i, data in enumerate(train_dataloader,0):
         img0, img1 , label = data
